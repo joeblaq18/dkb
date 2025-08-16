@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DKB Dashboard</title>
+  <style>
+    /* ---------- GLOBAL ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      display: flex;
+      background-color: #111;
+      color: #fff;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    a { text-decoration: none; color: inherit; }
+
+    /* ---------- SIDEBAR ---------- */
+    .sidebar {
+      width: 250px;
+      background: #1a1a1a;
+      height: 100vh;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: width 0.3s;
+    }
+    .sidebar.collapsed {
+      width: 70px;
+    }
+    .sidebar h2 {
+      margin-bottom: 30px;
+      color: #4da6ff;
+      font-size: 22px;
+      transition: opacity 0.3s;
+    }
+    .sidebar.collapsed h2,
+    .sidebar.collapsed ul li {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .sidebar ul {
+      list-style: none;
+    }
+    .sidebar ul li {
+      margin: 15px 0;
+      font-size: 15px;
+      cursor: pointer;
+      opacity: 0.8;
+    }
+    .sidebar ul li:hover {
+      opacity: 1;
+      color: #4da6ff;
+    }
+    .logout {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #aaa;
+      cursor: pointer;
+    }
+
+    /* ---------- MAIN CONTENT ---------- */
+    .main {
+      flex: 1;
+      padding: 30px;
+      transition: margin-left 0.3s;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .search {
+      background: #1a1a1a;
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: none;
+      color: #fff;
+      width: 250px;
+    }
+
+    .topbar-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: none;
+      font-size: 14px;
+    }
+    .toggle-btn { background: #4da6ff; color: white; }
+    .mode-btn { background: #444; color: white; }
+
+    /* ---------- BALANCE CARD ---------- */
+    .balance-section {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      gap: 20px;
+    }
+    .balance-card {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 15px;
+      width: 50%;
+    }
+    .balance-card h1 {
+      font-size: 28px;
+      margin: 10px 0;
+    }
+    .income { color: #00ff99; }
+    .expenses { color: #ff6666; }
+
+    .dkb-card {
+      width: 40%;
+      background: linear-gradient(135deg, #5d9fff, #7b61ff);
+      border-radius: 15px;
+      padding: 20px;
+      color: white;
+    }
+    .dkb-card-number {
+      margin: 40px 0;
+      font-size: 20px;
+      letter-spacing: 3px;
+    }
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+    }
+
+    /* ---------- TRANSACTIONS ---------- */
+    .transactions {
+      margin-top: 40px;
+      background: #1a1a1a;
+      border-radius: 15px;
+      padding: 20px;
+    }
+    .transactions h2 {
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table thead {
+      text-align: left;
+      font-size: 14px;
+      opacity: 0.7;
+    }
+    table th, table td {
+      padding: 12px 8px;
+    }
+    table tbody tr {
+      border-top: 1px solid #333;
+    }
+    .status {
+      background: #7b61ff;
+      padding: 5px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+
+    /* ---------- LIGHT MODE ---------- */
+    body.light {
+      background: #f4f4f4;
+      color: #111;
+    }
+    body.light .sidebar {
+      background: #fff;
+      color: #111;
+    }
+    body.light .balance-card,
+    body.light .transactions,
+    body.light .search {
+      background: #fff;
+      color: #111;
+    }
+    body.light .status {
+      background: #4da6ff;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN PAGE -->
+  <div id="login-page" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:#111; display:flex; align-items:center; justify-content:center; z-index:9999;">
+    <div style="background:#222; padding:40px 30px; border-radius:18px; box-shadow:0 4px 24px #0006; min-width:320px; text-align:center;">
+      <h2 style="color:#4da6ff; margin-bottom:18px;">DKB Login</h2>
+      <p style="margin-bottom:18px;">Enter your 4-digit PIN to access your dashboard.</p>
+      <input id="pin-input" type="password" maxlength="4" pattern="\d{4}" style="font-size:22px; letter-spacing:12px; text-align:center; padding:10px 18px; border-radius:8px; border:none; background:#333; color:#fff; margin-bottom:18px;" autofocus />
+      <br>
+      <button id="login-btn" class="btn" style="background:#4da6ff; color:#fff; width:100%; font-size:16px;">Login</button>
+      <div id="login-error" style="color:#ff6666; margin-top:14px; display:none;">Incorrect PIN. Try again.</div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div>
+      <h2>DKB</h2>
+      <ul>
+        <li><a href="#" class="menu-link" data-page="home">Home</a></li>
+        <li><a href="#" class="menu-link" data-page="history">Account History</a></li>
+        <li><a href="#" class="menu-link" data-page="token">Token</a></li>
+        <li><a href="#" class="menu-link" data-page="local-transfer">Local Transfer</a></li>
+        <li><a href="#" class="menu-link" data-page="international-transfer">International Transfer</a></li>
+        <li><a href="#" class="menu-link" data-page="deposit">Deposit</a></li>
+        <li><a href="#" class="menu-link" data-page="cheque-deposit">Cheque Deposit</a></li>
+        <li><a href="#" class="menu-link" data-page="beneficiaries">Beneficiaries</a></li>
+        <li><a href="#" class="menu-link" data-page="profile">Profile</a></li>
+      </ul>
+    </div>
+    <div class="logout">Logout</div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <div class="topbar">
+      <h2>DKB</h2>
+      <div class="topbar-buttons">
+        <button class="btn toggle-btn" id="toggleSidebar">☰</button>
+        <button class="btn mode-btn" id="toggleMode">🌙</button>
+        <input type="text" class="search" id="searchBox" placeholder="Search transactions..">
+      </div>
+    </div>
+
+    <!-- PAGE CONTENTS -->
+    <div id="page-home" class="page-section">
+      <div class="balance-section">
+        <div class="balance-card">
+          <p>Current Balance</p>
+          <h1>€863,010.00</h1>
+          <p style="font-size:12px; opacity:0.7;">+2.1% from last month</p>
+          <p class="income">Income: €4,567.89</p>
+          <p class="expenses">Expenses: €1,234.56</p>
+        </div>
+        <div class="dkb-card">
+          <p>DKB Card</p>
+          <div class="dkb-card-number">4000 1234 5678 9010</div>
+          <div class="card-footer">
+            <span>Hubert Iemenski</span>
+            <span>12/26</span>
+          </div>
+        </div>
+      </div>
+      <div class="quick-actions" style="margin-top:30px; display:flex; gap:20px;">
+        <button class="btn toggle-btn">Transfer Money</button>
+        <button class="btn mode-btn">Deposit</button>
+        <button class="btn" style="background:#7b61ff; color:#fff;">View History</button>
+      </div>
+    </div>
+
+    <div id="page-history" class="page-section" style="display:none;">
+      <div class="transactions">
+        <h2>Transactions</h2>
+        <table id="transactionTable">
+          <thead>
+            <tr>
+              <th>Recipient</th>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Marita's Supermarket<br><small>groceries@maritas.com</small></td>
+              <td>2025-10-28</td>
+              <td>€250.75</td>
+              <td><span class="status">Completed</span></td>
+            </tr>
+            <tr>
+              <td>Luxury Apartment Rent<br><small>leasing@luxury-apartments.com</small></td>
+              <td>2025-10-25</td>
+              <td>€12,000.00</td>
+              <td><span class="status">Completed</span></td>
+            </tr>
+            <tr>
+              <td>Amazon DE<br><small>orders@amazon.de</small></td>
+              <td>2025-08-16</td>
+              <td>€89.99</td>
+              <td><span class="status">Completed</span></td>
+            </tr>
+            <tr>
+              <td>Starbucks<br><small>info@starbucks.com</small></td>
+              <td>2025-08-15</td>
+              <td>€4.50</td>
+              <td><span class="status">Completed</span></td>
+            </tr>
+            <tr>
+              <td>DB Bahn Ticket<br><small>service@bahn.de</small></td>
+              <td>2025-08-14</td>
+              <td>€45.00</td>
+              <td><span class="status">Completed</span></td>
+            </tr>
+            <tr>
+              <td>Spotify Subscription<br><small>support@spotify.com</small></td>
+              <td>2025-08-13</td>
+              <td>€9.99</td>
+              <td><span class="status">Completed</span></td>
+            </tr>
+            <tr>
+              <td>Salary Payment<br><small>hr@company.com</small></td>
+              <td>2025-08-12</td>
+              <td>€5,000.00</td>
+              <td><span class="status">Completed</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:30px;">
+        <div style="background:#222; border-radius:12px; padding:20px; display:flex; gap:40px;">
+          <div>
+            <h3 style="color:#4da6ff;">Monthly Summary</h3>
+            <p>Income: <span style="color:#00ff99;">€4,567.89</span></p>
+            <p>Expenses: <span style="color:#ff6666;">€1,234.56</span></p>
+          </div>
+          <div>
+            <h3 style="color:#7b61ff;">Upcoming Payments</h3>
+            <ul style="list-style:none; padding-left:0;">
+              <li>Rent - €12,000.00 <span style="color:#aaa;">(Nov 1)</span></li>
+              <li>Spotify - €9.99 <span style="color:#aaa;">(Nov 5)</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-token" class="page-section" style="display:none;">
+      <div style="background:#222; border-radius:15px; padding:30px; max-width:400px; margin:auto; text-align:center;">
+        <h2 style="color:#4da6ff;">Token</h2>
+        <p>Your current token:</p>
+        <div style="font-size:22px; background:#333; padding:15px; border-radius:8px; margin:15px 0;">
+          <strong>DKB-2025-ABCD-1234</strong>
+        </div>
+        <button class="btn" style="background:#7b61ff; color:#fff;">Generate New Token</button>
+      </div>
+    </div>
+
+    <div id="page-local-transfer" class="page-section" style="display:none;">
+      <div style="background:#222; border-radius:15px; padding:30px; max-width:400px; margin:auto;">
+        <h2 style="color:#4da6ff;">Local Transfer</h2>
+        <form>
+          <label style="margin-bottom:10px; display:block;">Recipient IBAN:<br>
+            <input type="text" style="width:100%; padding:8px; border-radius:6px; border:none; margin-top:5px;" />
+          </label>
+          <label style="margin-bottom:10px; display:block;">Amount (€):<br>
+            <input type="number" style="width:100%; padding:8px; border-radius:6px; border:none; margin-top:5px;" />
+          </label>
+          <button class="btn" style="background:#00ff99; color:#111; width:100%; margin-top:15px;">Send</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="page-international-transfer" class="page-section" style="display:none;">
+      <div style="background:#222; border-radius:15px; padding:30px; max-width:400px; margin:auto;">
+        <h2 style="color:#7b61ff;">International Transfer</h2>
+        <form>
+          <label style="margin-bottom:10px; display:block;">Recipient IBAN:<br>
+            <input type="text" style="width:100%; padding:8px; border-radius:6px; border:none; margin-top:5px;" />
+          </label>
+          <label style="margin-bottom:10px; display:block;">SWIFT/BIC:<br>
+            <input type="text" style="width:100%; padding:8px; border-radius:6px; border:none; margin-top:5px;" />
+          </label>
+          <label style="margin-bottom:10px; display:block;">Amount (€):<br>
+            <input type="number" style="width:100%; padding:8px; border-radius:6px; border:none; margin-top:5px;" />
+          </label>
+          <button class="btn" style="background:#4da6ff; color:#fff; width:100%; margin-top:15px;">Send</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="page-deposit" class="page-section" style="display:none;">
+      <div style="background:#222; border-radius:15px; padding:30px; max-width:400px; margin:auto;">
+        <h2 style="color:#00ff99;">Deposit</h2>
+        <form>
+          <label style="margin-bottom:10px; display:block;">Amount (€):<br>
+            <input type="number" style="width:100%; padding:8px; border-radius:6px; border:none; margin-top:5px;" />
+          </label>
+          <button class="btn" style="background:#00ff99; color:#111; width:100%; margin-top:15px;">Deposit</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="page-cheque-deposit" class="page-section" style="display:none;">
+      <div style="background:#222; border-radius:15px; padding:30px; max-width:400px; margin:auto;">
+        <h2 style="color:#4da6ff;">Cheque Deposit</h2>
+        <form>
+          <label style="margin-bottom:10px; display:block;">Cheque Number:<br>
+            <input type="text" style="width:100%; padding:8px; border-radius:6px; border:none; margin-top:5px;" />
+          </label>
+          <label style="margin-bottom:10px; display:block;">Amount (€):<br>
+            <input type="number" style="width:100%; padding:8px; border-radius:6px; border:none; margin-top:5px;" />
+          </label>
+          <button class="btn" style="background:#7b61ff; color:#fff; width:100%; margin-top:15px;">Deposit Cheque</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="page-beneficiaries" class="page-section" style="display:none;">
+      <div style="background:#222; border-radius:15px; padding:30px; max-width:400px; margin:auto;">
+        <h2 style="color:#00ff99;">Beneficiaries</h2>
+        <ul style="list-style:none; padding-left:0; margin-bottom:20px;">
+          <li style="background:#333; padding:10px; border-radius:8px; margin-bottom:8px;">Marita's Supermarket</li>
+          <li style="background:#333; padding:10px; border-radius:8px; margin-bottom:8px;">Luxury Apartment Rent</li>
+          <li style="background:#333; padding:10px; border-radius:8px; margin-bottom:8px;">Amazon DE</li>
+        </ul>
+        <button class="btn" style="background:#4da6ff; color:#fff; width:100%;">Add Beneficiary</button>
+      </div>
+    </div>
+
+    <div id="page-profile" class="page-section" style="display:none;">
+      <div style="background:#222; border-radius:15px; padding:30px; max-width:400px; margin:auto; text-align:center;">
+        <h2 style="color:#7b61ff;">Profile</h2>
+        <img src="https://ui-avatars.com/api/?name=Hubert+Iemenski&background=4da6ff&color=fff&size=128" alt="Profile" style="border-radius:50%; margin-bottom:15px;">
+        <p style="font-size:18px; margin-bottom:8px;">Name: <strong>Hubert Iemenski</strong></p>
+        <p style="font-size:16px; margin-bottom:20px;">Email: <strong>hubert@iemenski.com</strong></p>
+        <button class="btn" style="background:#4da6ff; color:#fff;">Edit Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sidebar toggle
+    document.getElementById("toggleSidebar").addEventListener("click", () => {
+      document.getElementById("sidebar").classList.toggle("collapsed");
+    });
+
+    // Dark/Light Mode toggle
+    document.getElementById("toggleMode").addEventListener("click", () => {
+      document.body.classList.toggle("light");
+      const modeBtn = document.getElementById("toggleMode");
+      modeBtn.textContent = document.body.classList.contains("light") ? "🌙" : "☀️";
+    });
+
+    // Search filter for transactions
+    document.getElementById("searchBox").addEventListener("keyup", function () {
+      let filter = this.value.toLowerCase();
+      let rows = document.querySelectorAll("#transactionTable tbody tr");
+
+      rows.forEach(row => {
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+      });
+    });
+
+    // Page navigation for menu items
+    document.querySelectorAll('.menu-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const page = this.getAttribute('data-page');
+        document.querySelectorAll('.page-section').forEach(section => {
+          section.style.display = 'none';
+        });
+        const activeSection = document.getElementById('page-' + page);
+        if (activeSection) activeSection.style.display = '';
+      });
+    });
+
+    // Show Home by default
+    document.querySelectorAll('.page-section').forEach(section => {
+      section.style.display = 'none';
+    });
+    document.getElementById('page-home').style.display = '';
+
+    // --- LOGIN LOGIC ---
+    const loginPage = document.getElementById('login-page');
+    const loginBtn = document.getElementById('login-btn');
+    const pinInput = document.getElementById('pin-input');
+    const loginError = document.getElementById('login-error');
+    // Set your PIN here
+    const CORRECT_PIN = "1234";
+
+    function showDashboard() {
+      loginPage.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    function showError() {
+      loginError.style.display = '';
+      pinInput.value = '';
+      pinInput.focus();
+    }
+    loginBtn.addEventListener('click', function() {
+      if (pinInput.value === CORRECT_PIN) {
+        showDashboard();
+      } else {
+        showError();
+      }
+    });
+    pinInput.addEventListener('keyup', function(e) {
+      if (e.key === 'Enter') {
+        loginBtn.click();
+      }
+      loginError.style.display = 'none';
+    });
+
+    // Prevent dashboard interaction until login
+    document.body.style.overflow = 'hidden';
+    loginPage.style.display = '';
+  </script>
+</body>
+</html>
